@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meros Donor Prospector</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.5;background:#F7F5F0;color:#1A1A18}
+.layout{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+.sidebar{background:#FDFCFA;border-right:1px solid #E5E0D8;padding:20px;display:flex;flex-direction:column;gap:18px;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding-bottom:16px;border-bottom:1px solid #E5E0D8}
+.brand-icon{width:32px;height:32px;background:#1A6B4A;border-radius:7px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;flex-shrink:0}
+.brand-name{font-weight:600;font-size:13px;color:#1A3A2A}
+.brand-sub{font-size:11px;color:#6B7280}
+.sec-label{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#9CA3AF;margin-bottom:7px}
+.api-wrap{position:relative}
+.api-wrap input{width:100%;padding:8px 34px 8px 10px;border:1px solid #E5E0D8;border-radius:7px;font-size:12px;font-family:monospace;background:white;color:#1A1A18;outline:none}
+.api-wrap input:focus{border-color:#1A6B4A}
+.api-toggle{position:absolute;right:9px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:11px;color:#9CA3AF}
+.key-status{font-size:11px;margin-top:4px;display:flex;align-items:center;gap:5px;color:#6B7280}
+.dot{width:6px;height:6px;border-radius:50%;background:#D1D5DB;flex-shrink:0}
+.dot.green{background:#16A34A}
+.check-list{display:flex;flex-direction:column;gap:3px}
+.check-item{display:flex;align-items:flex-start;gap:8px;padding:5px 7px;border-radius:6px;cursor:pointer;font-size:12px}
+.check-item:hover{background:#F0F7F4}
+.check-item input{accent-color:#1A6B4A;margin-top:2px;flex-shrink:0}
+.item-name{font-weight:500;color:#1A1A18;display:block}
+.item-sub{font-size:10px;color:#9CA3AF}
+.tag-wrap{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:11px;padding:3px 9px;border-radius:20px;cursor:pointer;border:1px solid #E5E0D8;background:white;color:#6B7280;user-select:none;transition:all .15s}
+.tag.on{background:#1A6B4A;color:white;border-color:#1A6B4A}
+.run-btn{width:100%;padding:10px;background:#1A6B4A;color:white;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:auto;transition:background .15s}
+.run-btn:hover{background:#1A3A2A}
+.run-btn:disabled{background:#9CA3AF;cursor:not-allowed}
+.csv-btn{width:100%;padding:8px;background:white;color:#1A6B4A;border:1px solid #1A6B4A;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;margin-top:6px;transition:background .15s}
+.csv-btn:hover{background:#E1F5EE}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:none;flex-shrink:0}
+.main{padding:20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:white;border:1px solid #E5E0D8;border-radius:8px;padding:11px 13px}
+.stat-l{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9CA3AF}
+.stat-v{font-size:24px;font-weight:600;color:#1A3A2A;margin-top:3px}
+.banner{border-radius:7px;padding:10px 13px;font-size:12px;display:none;line-height:1.5}
+.banner.err{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
+.banner.info{background:#FDF8EC;border:1px solid #FCD34D;color:#92400E}
+.progress-box{background:white;border:1px solid #E5E0D8;border-radius:8px;padding:13px 15px}
+.prog-lbl{font-size:12px;color:#6B7280;margin-bottom:8px}
+.prog-track{background:#F3F4F6;border-radius:20px;height:5px}
+.prog-fill{background:#1A6B4A;height:5px;border-radius:20px;width:0%;transition:width .4s}
+.prog-log{margin-top:9px;font-size:11px;color:#9CA3AF;font-family:monospace;max-height:90px;overflow-y:auto;line-height:1.9}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap}
+.filter-row input,.filter-row select{padding:7px 10px;border:1px solid #E5E0D8;border-radius:7px;font-size:12px;background:white;color:#1A1A18;outline:none}
+.filter-row input{flex:1;min-width:130px}
+.filter-row input:focus,.filter-row select:focus{border-color:#1A6B4A}
+.csv-panel{background:white;border:1px solid #E5E0D8;border-radius:8px;padding:14px;display:none}
+.csv-panel.open{display:block}
+.csv-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.csv-title{font-size:13px;font-weight:500}
+.csv-close{background:none;border:none;font-size:18px;cursor:pointer;color:#9CA3AF;line-height:1}
+.csv-hint{font-size:11px;color:#6B7280;margin-bottom:8px;line-height:1.6}
+textarea.csv-out{width:100%;height:150px;padding:9px;border:1px solid #E5E0D8;border-radius:7px;font-size:11px;font-family:monospace;background:#FAFAFA;color:#1A1A18;resize:vertical;outline:none}
+.copy-row{display:flex;align-items:center;gap:10px;margin-top:9px}
+.copy-btn{padding:7px 14px;background:#1A6B4A;color:white;border:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer}
+.copy-btn:hover{background:#1A3A2A}
+.copy-ok{font-size:11px;color:#16A34A;opacity:0;transition:opacity .3s}
+.copy-ok.show{opacity:1}
+.cards{display:flex;flex-direction:column;gap:10px}
+.card{background:white;border:1px solid #E5E0D8;border-radius:10px;overflow:hidden;transition:border-color .15s}
+.card:hover{border-color:#4A9E72}
+.card-head{padding:13px 16px;display:flex;align-items:flex-start;justify-content:space-between;cursor:pointer;gap:12px}
+.card-left{display:flex;align-items:flex-start;gap:11px}
+.avatar{width:38px;height:38px;border-radius:8px;background:#C8ECD9;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#1A3A2A;flex-shrink:0}
+.card-name{font-weight:600;font-size:14px;color:#1A1A18}
+.card-meta{font-size:11px;color:#9CA3AF;margin-top:2px}
+.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.bdg{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px}
+.bdg-high{background:#DCFCE7;color:#166534}
+.bdg-med{background:#FEF9C3;color:#854D0E}
+.bdg-low{background:#F1F5F9;color:#475569}
+.bdg-type{background:#C8ECD9;color:#1A3A2A}
+.bdg-uni{background:#FDF8EC;color:#92400E}
+.bdg-km{background:#FEF9C3;color:#854D0E}
+.card-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.card-amt{font-size:17px;font-weight:600;color:#1A3A2A}
+.chevron{font-size:17px;color:#9CA3AF;transition:transform .2s;line-height:1}
+.chevron.open{transform:rotate(180deg)}
+.card-body{border-top:1px solid #F3F4F6;padding:13px 16px;display:none}
+.card-body.open{display:block}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px}
+.dk{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#9CA3AF;margin-bottom:2px}
+.dv{font-size:12px;color:#1A1A18}
+.dv a{color:#1A6B4A;text-decoration:none}
+.dv a:hover{text-decoration:underline}
+.card-actions{display:flex;gap:8px;padding-top:11px;border-top:1px solid #F3F4F6}
+.card-actions select,.card-actions input{padding:5px 8px;border:1px solid #E5E0D8;border-radius:6px;font-size:11px;background:white;color:#1A1A18;outline:none}
+.card-actions select{flex:0 0 auto}
+.card-actions input{flex:1}
+.empty{text-align:center;padding:50px 20px;color:#9CA3AF}
+.empty-t{font-size:16px;font-weight:500;color:#6B7280;margin-bottom:6px}
+.empty-s{font-size:13px;max-width:340px;margin:0 auto}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">M</div>
+      <div><div class="brand-name">Meros Donor Prospector</div><div class="brand-sub">Christian R1 Health Initiative Research</div></div>
+    </div>
+    <div>
+      <div class="sec-label" style="color:#16A34A">API Key stored on server</div>
+      <div class="key-status"><span class="dot green"></span><span>Key configured via Netlify env vars</span></div>
+    </div>
+    <div>
+      <div class="sec-label">Target Institutions</div>
+      <div class="check-list">
+        <label class="check-item"><input type="checkbox" class="uni" value="Baylor University" checked><span><span class="item-name">Baylor University</span><span class="item-sub">Waco, TX - R1</span></span></label>
+        <label class="check-item"><input type="checkbox" class="uni" value="Wheaton College" checked><span><span class="item-name">Wheaton College</span><span class="item-sub">Wheaton, IL</span></span></label>
+        <label class="check-item"><input type="checkbox" class="uni" value="Regent University"><span><span class="item-name">Regent University</span><span class="item-sub">Virginia Beach, VA</span></span></label>
+        <label class="check-item"><input type="checkbox" class="uni" value="Biola University"><span><span class="item-name">Biola University</span><span class="item-sub">La Mirada, CA</span></span></label>
+        <label class="check-item"><input type="checkbox" class="uni" value="Liberty University"><span><span class="item-name">Liberty University</span><span class="item-sub">Lynchburg, VA</span></span></label>
+        <label class="check-item"><input type="checkbox" class="uni" value="Oral Roberts University"><span><span class="item-name">Oral Roberts University</span><span class="item-sub">Tulsa, OK</span></span></label>
+      </div>
+    </div>
+    <div>
+      <div class="sec-label">Health Keywords</div>
+      <div class="tag-wrap">
+        <span class="tag on" data-kw="public health">public health</span>
+        <span class="tag on" data-kw="global health">global health</span>
+        <span class="tag on" data-kw="community health">community health</span>
+        <span class="tag" data-kw="epidemiology">epidemiology</span>
+        <span class="tag" data-kw="health research">health research</span>
+        <span class="tag" data-kw="health initiative">health initiative</span>
+        <span class="tag" data-kw="school of public health">school of public health</span>
+        <span class="tag" data-kw="health ministry">health ministry</span>
+      </div>
+    </div>
+    <div>
+      <div class="sec-label">Data Sources</div>
+      <div class="check-list">
+        <label class="check-item"><input type="checkbox" id="src990" checked><span><span class="item-name">IRS Form 990</span><span class="item-sub">via ProPublica</span></span></label>
+        <label class="check-item"><input type="checkbox" id="srcHR" checked><span><span class="item-name">Donor honor rolls</span><span class="item-sub">Annual reports</span></span></label>
+        <label class="check-item"><input type="checkbox" id="srcPR" checked><span><span class="item-name">Press releases</span><span class="item-sub">Named gift announcements</span></span></label>
+      </div>
+    </div>
+    <button class="run-btn" id="runBtn" onclick="runSearch()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnLbl">Run Prospect Search</span>
+    </button>
+    <button class="csv-btn" onclick="showCSV()">View / Copy CSV</button>
+  </aside>
+
+  <main class="main">
+    <div class="stats">
+      <div class="stat"><div class="stat-l">Total Prospects</div><div class="stat-v" id="stTotal">0</div></div>
+      <div class="stat"><div class="stat-l">High Relevance</div><div class="stat-v" id="stHigh">0</div></div>
+      <div class="stat"><div class="stat-l">Foundations</div><div class="stat-v" id="stFnd">0</div></div>
+      <div class="stat"><div class="stat-l">Contacted</div><div class="stat-v" id="stCon">0</div></div>
+    </div>
+    <div class="banner" id="banner"></div>
+    <div class="progress-box" id="progBox" style="display:none">
+      <div class="prog-lbl" id="progLbl">Starting...</div>
+      <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+      <div class="prog-log" id="progLog"></div>
+    </div>
+    <div class="csv-panel" id="csvPanel">
+      <div class="csv-top">
+        <div class="csv-title">CSV Export</div>
+        <button class="csv-close" onclick="document.getElementById('csvPanel').classList.remove('open')">x</button>
+      </div>
+      <div class="csv-hint"><b>To import into Excel or Google Sheets:</b> click Copy all, open a blank spreadsheet, click cell A1, and paste (Ctrl+V / Cmd+V).</div>
+      <textarea class="csv-out" id="csvOut" readonly></textarea>
+      <div class="copy-row">
+        <button class="copy-btn" onclick="copyCSV()">Copy all</button>
+        <span class="copy-ok" id="copyOk">Copied!</span>
+      </div>
+    </div>
+    <div class="filter-row">
+      <input type="text" id="fq" placeholder="Search prospects..." oninput="render()">
+      <select id="ft" onchange="render()"><option value="">All types</option><option>Individual</option><option>Family Foundation</option><option>Corporate Foundation</option></select>
+      <select id="fr" onchange="render()"><option value="">All relevance</option><option>High</option><option>Medium</option><option>Low</option></select>
+      <select id="fs" onchange="render()"><option value="">All statuses</option><option>Not contacted</option><option>Contacted</option><option>Responded</option><option>Qualified</option></select>
+    </div>
+    <div id="cardArea">
+      <div class="empty"><div class="empty-t">Ready to search</div><div class="empty-s">Configure your API key, select institutions and keywords, then run a search.</div></div>
+    </div>
+  </main>
+</div>
+<script>
+var prospects = [], expanded = new Set();
+
+function checkKey() {
+  var k = document.getElementById("apiKey").value.trim();
+  var ok = k.startsWith("sk-ant-") && k.length > 20;
+  document.getElementById("keyDot").className = "dot" + (ok ? " green" : "");
+  document.getElementById("keyLbl").textContent = ok ? "Key configured (optional)" : "Not needed - key is on server";
+}
+function toggleKey() {
+  var el = document.getElementById("apiKey");
+  el.type = el.type === "password" ? "text" : "password";
+}
+document.querySelectorAll(".tag").forEach(function(t) {
+  t.addEventListener("click", function() { t.classList.toggle("on"); });
+});
+function prog(msg, pct) {
+  document.getElementById("progLbl").textContent = msg;
+  document.getElementById("progFill").style.width = pct + "%";
+  var l = document.getElementById("progLog");
+  l.innerHTML += "<div>- " + msg + "</div>";
+  l.scrollTop = l.scrollHeight;
+}
+function showBanner(msg, type) {
+  var b = document.getElementById("banner");
+  b.className = "banner " + type;
+  b.textContent = msg;
+  b.style.display = "block";
+  setTimeout(function() { b.style.display = "none"; }, type === "err" ? 12000 : 16000);
+}
+
+function runSearch() {
+  var unis = Array.from(document.querySelectorAll("input.uni:checked")).map(function(i) { return i.value; });
+  if (!unis.length) { showBanner("Select at least one institution.", "err"); return; }
+  var kws = Array.from(document.querySelectorAll(".tag.on")).map(function(t) { return t.dataset.kw; });
+  if (!kws.length) { showBanner("Select at least one keyword.", "err"); return; }
+  var sources = [
+    document.getElementById("src990").checked ? "IRS Form 990 via ProPublica" : "",
+    document.getElementById("srcHR").checked ? "university donor honor rolls" : "",
+    document.getElementById("srcPR").checked ? "university press releases" : ""
+  ].filter(Boolean).join(", ");
+
+  document.getElementById("runBtn").disabled = true;
+  document.getElementById("spinner").style.display = "block";
+  document.getElementById("btnLbl").textContent = "Searching...";
+  document.getElementById("progBox").style.display = "block";
+  document.getElementById("progLog").innerHTML = "";
+  document.getElementById("banner").style.display = "none";
+  document.getElementById("csvPanel").classList.remove("open");
+
+  prog("Sending search to server...", 15);
+  prog("AI is researching donors (this takes 20-40 seconds)...", 30);
+
+  fetch("/search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ unis: unis, keywords: kws, sources: sources })
+  }).then(function(r) {
+    prog("Response received, parsing...", 80);
+    return r.json().then(function(data) {
+      if (!r.ok) throw new Error(data.error || "HTTP " + r.status);
+      return data;
+    });
+  }).then(function(data) {
+    if (data.error) throw new Error(data.error);
+    var parsed = data.prospects;
+    if (!parsed || !parsed.length) throw new Error("No prospects returned. Try different institutions or keywords.");
+    prog("Found " + parsed.length + " prospects. Rendering...", 90);
+    parsed.forEach(function(p) {
+      p.status = "Not contacted"; p.userNotes = ""; p.id = Math.random().toString(36).slice(2);
+    });
+    prospects = prospects.concat(parsed);
+    render(); updateStats();
+    resetBtn(); hideProgress();
+  }).catch(function(e) {
+    showBanner("Search failed: " + e.message, "err");
+    resetBtn(); hideProgress();
+  });
+}
+
+function resetBtn() {
+  document.getElementById("runBtn").disabled = false;
+  document.getElementById("spinner").style.display = "none";
+  document.getElementById("btnLbl").textContent = "Run Prospect Search";
+}
+function hideProgress() { setTimeout(function() { document.getElementById("progBox").style.display = "none"; }, 3000); }
+
+function render() {
+  var q = document.getElementById("fq").value.toLowerCase();
+  var ft = document.getElementById("ft").value;
+  var fr = document.getElementById("fr").value;
+  var fs = document.getElementById("fs").value;
+  var list = prospects.filter(function(p) {
+    if (q && JSON.stringify(p).toLowerCase().indexOf(q) === -1) return false;
+    if (ft && p.type !== ft) return false;
+    if (fr && p.healthRelevance !== fr) return false;
+    if (fs && p.status !== fs) return false;
+    return true;
+  });
+  var area = document.getElementById("cardArea");
+  if (!list.length) {
+    area.innerHTML = "<div class='empty'><div class='empty-t'>" + (prospects.length ? "No matches" : "Ready to search") + "</div><div class='empty-s'>" + (prospects.length ? "Try adjusting your filters." : "Select institutions and keywords, then run a search.") + "</div></div>";
+    return;
+  }
+  area.innerHTML = "<div class='cards'>" + list.map(cardHTML).join("") + "</div>";
+  list.forEach(function(p) {
+    var el = document.getElementById("cd-" + p.id);
+    if (!el) return;
+    if (expanded.has(p.id)) { el.querySelector(".card-body").classList.add("open"); el.querySelector(".chevron").classList.add("open"); }
+    el.querySelector(".card-head").addEventListener("click", function() { toggleCard(p.id); });
+    el.querySelector(".st-sel").addEventListener("change", function(e) { p.status = e.target.value; updateStats(); });
+    el.querySelector(".nt-inp").addEventListener("input", function(e) { p.userNotes = e.target.value; });
+  });
+}
+function cardHTML(p) {
+  var init = p.name.split(" ").slice(0,2).map(function(w) { return w[0] || ""; }).join("").toUpperCase();
+  var rc = p.healthRelevance === "High" ? "bdg-high" : p.healthRelevance === "Medium" ? "bdg-med" : "bdg-low";
+  return "<div class='card' id='cd-" + p.id + "'><div class='card-head'><div class='card-left'><div class='avatar'>" + init + "</div><div><div class='card-name'>" + p.name + "</div><div class='card-meta'>" + (p.location || "Location unknown") + " - " + (p.year || "Year unknown") + "</div><div class='badges'><span class='bdg bdg-type'>" + p.type + "</span><span class='bdg bdg-uni'>" + p.institution + "</span><span class='bdg " + rc + "'>" + p.healthRelevance + " relevance</span></div></div></div><div class='card-right'><div class='card-amt'>" + (p.giftAmount || "-") + "</div><div class='chevron'>v</div></div></div><div class='card-body'><div class='detail-grid'><div><div class='dk'>Gift Designation</div><div class='dv'>" + (p.giftDesignation || "-") + "</div></div><div><div class='dk'>Source</div><div class='dv'>" + p.sourceType + " <a href='" + (p.sourceUrl || "#") + "' target='_blank'>View</a></div></div><div><div class='dk'>Contact Clues</div><div class='dv'>" + (p.contactClues || "-") + "</div></div><div><div class='dk'>Notes</div><div class='dv'>" + (p.notes || "-") + "</div></div></div><div class='card-actions'><select class='st-sel'><option " + (p.status==="Not contacted"?"selected":"") + ">Not contacted</option><option " + (p.status==="Contacted"?"selected":"") + ">Contacted</option><option " + (p.status==="Responded"?"selected":"") + ">Responded</option><option " + (p.status==="Qualified"?"selected":"") + ">Qualified</option></select><input class='nt-inp' placeholder='Add outreach notes...' value='" + (p.userNotes||"") + "'></div></div></div>";
+}
+function toggleCard(id) {
+  if (expanded.has(id)) { expanded.delete(id); } else { expanded.add(id); }
+  var el = document.getElementById("cd-" + id);
+  if (el) { el.querySelector(".card-body").classList.toggle("open"); el.querySelector(".chevron").classList.toggle("open"); }
+}
+function updateStats() {
+  document.getElementById("stTotal").textContent = prospects.length;
+  document.getElementById("stHigh").textContent = prospects.filter(function(p) { return p.healthRelevance === "High"; }).length;
+  document.getElementById("stFnd").textContent = prospects.filter(function(p) { return (p.type||"").indexOf("Foundation") !== -1; }).length;
+  document.getElementById("stCon").textContent = prospects.filter(function(p) { return p.status && p.status !== "Not contacted"; }).length;
+}
+function buildCSV() {
+  var hdr = ["Name","Type","Location","Gift Amount","Designation","Institution","Source Type","Source URL","Year","Relevance","Contact Clues","Status","Notes"];
+  var rows = prospects.map(function(p) {
+    return [p.name,p.type,p.location,p.giftAmount,p.giftDesignation,p.institution,p.sourceType,p.sourceUrl,p.year,p.healthRelevance,p.contactClues,p.status,p.userNotes].map(function(v) { return '"' + (v||"").toString().replace(/"/g,'""') + '"'; }).join(",");
+  });
+  return [hdr.join(",")].concat(rows).join("\n");
+}
+function showCSV() {
+  if (!prospects.length) { showBanner("Run a search first.", "err"); return; }
+  document.getElementById("csvOut").value = buildCSV();
+  document.getElementById("csvPanel").classList.add("open");
+}
+function copyCSV() {
+  var el = document.getElementById("csvOut");
+  el.select(); el.setSelectionRange(0, 99999);
+  try {
+    document.execCommand("copy");
+    var ok = document.getElementById("copyOk"); ok.classList.add("show");
+    setTimeout(function() { ok.classList.remove("show"); }, 2500);
+  } catch(e) {
+    showBanner("Select all text in the box (Ctrl+A) then copy manually.", "info");
+  }
+}
+
+// On load: confirm proxy is reachable
+window.addEventListener("load", function() {
+  fetch("/search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ping: true })
+  }).then(function(r) {
+    return r.json().then(function(data) {
+      if (data.error && data.error.indexOf("ANTHROPIC_API_KEY") !== -1) {
+        showBanner("Almost ready: add ANTHROPIC_API_KEY in Netlify Site Configuration > Environment Variables, then redeploy.", "err");
+      }
+    });
+  }).catch(function() {});
+});
+</script>
+</body>
+</html>
